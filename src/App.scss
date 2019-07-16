@@ -1,0 +1,154 @@
+@mixin on-circle($item-count, $circle-size, $item-size) {
+  position: relative;
+  width:  $circle-size;
+  height: $circle-size;
+  padding: 0;
+  border-radius: 50%; 
+  list-style: none;       
+  
+  .letter {
+    display: block;
+    position: absolute;
+    top:  50%; 
+    left: 50%;
+    width:  $item-size;
+    height: $item-size;
+    margin: -($item-size / 2);
+  
+    $angle: (360 / $item-count);
+    $rot: 270;
+
+    @for $i from 1 through $item-count {
+      &:nth-of-type(#{$i}) {
+        transform: 
+          rotate($rot * 1deg) 
+          translate($circle-size / 2) 
+          rotate($rot * -1deg);
+      }
+
+      $rot: $rot + $angle;
+    }
+  }
+}
+
+.app-container {
+  width: 900px;
+  margin: 0 auto;
+
+  .rosco-container {
+
+    .rosco {
+      @include on-circle($item-count: 26, $circle-size: 450px, $item-size: 20px); 
+      margin: 30px auto 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      .letter {
+        background: #aaa;
+        border-radius: 40px;
+        padding: 10px;
+        text-align: center;
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+        line-height: 20px;
+        background-color: #3a99cf;
+        border: 2px solid transparent
+      }
+
+      .letter-skipped {
+        background-color: #ffe000;
+      }
+
+      .letter-success {
+        background-color: #14b906;
+      }
+
+      .letter-error {
+        background-color: #ff1515;
+      }
+
+      .letter-active {
+        background-color: #5bc3ff;
+        border-color: #FFF;
+      }
+    }
+  }
+
+  .buttons {
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+
+    .time {
+      display: block;
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 20px;
+      color: #FFF;
+      font-weight: bold;
+      width: 230px;
+    }
+    
+    button {
+      border: 0;
+      border-radius: 5px;
+      font-size: 14px;
+      cursor: pointer;
+      color: #FFF;
+      font-weight: bold;
+      width: 180px;
+      height: 40px;
+      box-sizing: border-box;
+      background-color: #888;
+      margin: 0 auto 16px;
+      display: block;
+      text-shadow: 1px 1px #888;
+      text-transform: uppercase;
+
+      &.start-button {
+        background: #3a99cf;
+      }
+
+      &.error-button {
+        background-color: #ff1515;
+      }
+
+      &.skipped-button {
+        background-color: #ffe000;
+      }
+
+      &.success-button {
+        background-color: #14b906;
+      }
+    }
+
+    .status {
+      color: #FFF;
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-container {
+    width: 100%;
+
+    .rosco-container {
+      display: block;
+
+      .rosco {
+        @include on-circle($item-count: 26, $circle-size: 350px, $item-size: 12px); 
+        margin: 30px 0 0 14px;
+
+        .letter {
+          line-height: 12px;
+        }
+
+        .buttons {
+          margin: auto 0 auto 20px;
+        }
+      }
+    }
+  }
+}
