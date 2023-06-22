@@ -1,0 +1,1143 @@
+openapi: 3.0.1
+info:
+  title: "Cards Service Endpoints"
+  version: 0.0.1
+  description:
+    $ref: "./desc/description.md"
+  x-nav-id: cards
+  x-nav-title: "{{Tarjetas}}"
+servers:
+  - url: https://api.pomelo.la/cards/v1
+    description: Production
+  - url: http://cards.sbx.pomelo.la/v1
+    description: Sandbox
+  - url: https://api-stage.pomelo.la/cards/v1
+    description: Stage
+  - url: http://cards.devcde.pomelo.la/v1
+    description: Development
+paths:
+  "/{id}":
+    get:
+      operationId: getCard
+      summary: "{{Obtener Tarjeta}}"
+      description:
+        $ref: "./desc/get_card_description.md"
+      parameters:
+        - name: Authorization
+          schema:
+            example: "Bearer {access_token}"
+            type: string
+          in: header
+          required: true
+        - schema:
+            type: string
+            enum:
+              - pan
+              - cvv
+              - name
+              - expiration_date
+          in: query
+          name: extend
+          description: "{{Permite obtener información adicional como el pan y cvc, que no están incluidos por defecto en la respuesta.}}"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/CardStandardResponse"
+                  - $ref: "#/components/schemas/SecureCardStandardResponse"
+        "401":
+          description: "{{No autorizado}}"
+        "403":
+          description: "{{Acceso denegado}}"
+        "404":
+          description: "{{Tarjeta no encontrada}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardNotFoundErrorResponse"
+    patch:
+      operationId: updateCard
+      summary: "{{Actualizar Tarjeta}}"
+      description:
+        $ref: "./desc/update_card_description.md"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardUpdateDto"
+        required: true
+      parameters:
+        - name: Authorization
+          schema:
+            example: "Bearer {access_token}"
+            type: string
+          in: header
+          required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardUpdateResponse"
+        "400":
+          description: "{{Request inválido}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequestErrorResponse"
+        "401":
+          description: "{{No autorizado}}"
+        "403":
+          description: "{{Acceso denegado}}"
+        "404":
+          description: "{{Tarjeta, usuario o grupo de afinidad no encontrado}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SomeNotFoundErrorResponse"
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+        description: "{{Id público de la tarjeta}}"
+  "/{id}/shipment":
+    put:
+      operationId: updateCardShipment
+      summary: "{{Actualizar Envío de Tarjeta}}"
+      description:
+        $ref: "./desc/update_card_shipment_description.md"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardShipmentUpdateDto"
+        required: true
+      parameters:
+        - name: Authorization
+          schema:
+            example: "Bearer {access_token}"
+            type: string
+          in: header
+          required: true
+      responses:
+        "200":
+          description: "{{OK}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardShipmentUpdateResponse"
+        "400":
+          description: "{{Request inválido}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequestErrorResponse"
+        "401":
+          description: "{{No autorizado}}"
+        "403":
+          description: "{{Acceso denegado}}"
+        "404":
+          description: "{{Tarjeta no encontrada}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SomeNotFoundErrorResponse"
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+        description: "{{Id público de la tarjeta}}"
+  /:
+    get:
+      operationId: searchCards
+      summary: "{{Buscar Tarjetas}}"
+      description:
+        $ref: "./desc/search_cards_description.md"
+      parameters:
+        - name: Authorization
+          schema:
+            example: "Bearer {access_token}"
+            type: string
+          in: header
+          required: true
+        - name: filter[card_type]
+          in: query
+          schema:
+            type: string
+            enum:
+              - VIRTUAL
+              - PHYSICAL
+        - name: filter[user_id]
+          in: query
+          schema:
+            type: string
+        - name: filter[status]
+          in: query
+          schema:
+            type: string
+        - name: filter[status_detail]
+          in: query
+          schema:
+            $ref: "#/components/schemas/StatusDetail"
+        - name: filter[affinity_group_id]
+          in: query
+          schema:
+            type: string
+        - name: filter[shipment_id]
+          in: query
+          schema:
+            type: string
+        - name: filter[innominate]
+          in: query
+          schema:
+            type: boolean
+        - name: filter[product_type]
+          in: query
+          schema:
+            type: string
+            enum:
+              - PREPAID
+              - CREDIT
+              - DEBIT
+        - name: filter[product_provider]
+          in: query
+          schema:
+            type: string
+            enum:
+              - MASTERCARD
+              - VISA
+        - name: filter[country_code]
+          in: query
+          schema:
+            type: string
+          description: "ISO 3166-1 alpha-3"
+        - name: page[size]
+          description: "{{Tamaño de página.}}"
+          in: query
+          schema:
+            type: number
+        - name: page[number]
+          description: "{{Número de página. El número de la primer página es 0.}}"
+          in: query
+          schema:
+            type: number
+        - name: sort
+          in: query
+          schema:
+            type: string
+            example: "status,-card_type"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardResponsePage"
+        "400":
+          description: "{{Request inválido}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequestErrorResponse"
+        "401":
+          description: "{{No autorizado}}"
+        "403":
+          description: "{{Acceso denegado}}"
+    post:
+      operationId: createCard
+      summary: "{{Crear Tarjeta}}"
+      description:
+        $ref: "./desc/create_card_description.md"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardDto"
+        required: true
+      parameters:
+        - name: Authorization
+          schema:
+            example: "Bearer {access_token}"
+            type: string
+          in: header
+          required: true
+        - name: x-idempotency-key
+          schema:
+            example: "fRwX12Dg3345AD"
+            type: string
+          in: header
+          required: true
+          description: "{{ID único en cada request para usar nuestro esquema de idempotencia.}}"
+      responses:
+        "201":
+          description: "{{Tarjeta creada}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardCreationStandardResponse"
+        "400":
+          description: "{{Request inválido}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequestErrorResponse"
+        "401":
+          description: "{{No autorizado}}"
+        "403":
+          description: "{{Acceso denegado}}"
+        "404":
+          description: "{{Usuario o grupo de afinidad no encontrado}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserOrAffinityNotFoundErrorResponse"
+  /batches:
+    post:
+      operationId: createCardsBatch
+      summary: "{{Crear Lote de Tarjetas Innominadas}}"
+      description:
+        $ref: "./desc/create_innominate_cards_batch_description.md"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardBatchRequestDto"
+        required: true
+      parameters:
+        - name: Authorization
+          schema:
+            example: "Bearer {access_token}"
+            type: string
+          in: header
+          required: true
+      responses:
+        "202":
+          description: "{{Batch de tarjetas aceptado}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardBatchStandardResponse"
+        "400":
+          description: "{{Request inválido}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequestErrorResponse"
+        "401":
+          description: "{{No autorizado}}"
+        "403":
+          description: "{{Acceso denegado}}"
+        "404":
+          description: "{{Grupo de afinidad no encontrado}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AffinityNotFoundErrorResponse"
+  "/batches/shipments/{shipmentId}":
+    put:
+      operationId: updateCardsBatchShipment
+      summary: "{{Actualizar Envío de un lote de tarjetas}}"
+      description:
+        $ref: "./desc/update_cards_batch_shipment_description.md"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardsBatchShipmentUpdateDto"
+        required: true
+      parameters:
+        - name: Authorization
+          schema:
+            example: "Bearer {access_token}"
+            type: string
+          in: header
+          required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardShipmentUpdateResponse"
+        "400":
+          description: "{{Request inválido}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequestErrorResponse"
+        "401":
+          description: "{{No autorizado}}"
+        "403":
+          description: "{{Acceso denegado}}"
+        "404":
+          description: "{{Batch no encontrado}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SomeNotFoundErrorResponse"
+    parameters:
+      - schema:
+          type: string
+        name: shipmentId
+        in: path
+        required: true
+        description: "{{Id público del envío}}"
+  /activation:
+    post:
+      operationId: activateCard
+      summary: "{{Activar Tarjeta}}"
+      description:
+        $ref: "./desc/activate_card_description.md"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/CardActivationByCodeDto"
+                - $ref: "#/components/schemas/CardActivationByPanDto"
+        required: true
+      parameters:
+        - name: Authorization
+          schema:
+            example: "Bearer {access_token}"
+            type: string
+          in: header
+          required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardActivationResponse"
+        "400":
+          description: "{{Request inválido}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequestErrorResponse"
+        "401":
+          description: "{{No autorizado}}"
+        "403":
+          description: "{{Acceso denegado}}"
+        "404":
+          description: "{{Tarjeta no encontrada}}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardNotFoundErrorResponse"
+  /config/affinity-groups/{id}:
+    get:
+      operationId: getAffinityGroup
+      summary: "{{Obtener Grupo de Afinidad}}"
+      description:
+        $ref: './desc/get_affinity_group_description.md'
+      parameters:
+        - name: Authorization
+          schema:
+            example: "Bearer {access_token}"
+            type: string
+          in: header
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AffinityGroupExtendedStandardResponseDto'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Affinity group was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AffinityNotFoundErrorResponse'
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+        description: "{{ID público del grupo de afinidad}}"
+components:
+  schemas:
+    AddressDto:
+      type: object
+      properties:
+        street_name:
+          type: string
+          maxLength: 100
+          example: "Street"
+        street_number:
+          type: string
+          example: "123"
+        floor:
+          type: string
+          example: "5"
+        apartment:
+          type: string
+          example: "A"
+        city:
+          type: string
+          maxLength: 100
+          example: "Buenos Aires"
+        region:
+          type: string
+          maxLength: 35
+          example: "Buenos Aires"
+        country:
+          type: string
+          example: "Argentina"
+        zip_code:
+          type: string
+          example: "5653"
+        neighborhood:
+          type: string
+          maxLength: 100
+          example: "Palermo"
+      x-internal: true
+    ReceiverDto:
+      type: object
+      properties:
+        full_name:
+          type: string
+          example: "Gonzalo Iglesias"
+        email:
+          type: string
+          example: "gonzalo@pomelo.la"
+        document_type:
+          type: enum
+            - DNI
+            - LE
+            - LC
+            - CI
+            - PASSPORT
+            - INE
+            - RG
+            - CNH
+            - CC
+            - CE
+            - PEP
+        document_number:
+          type: string
+          example: "35354896"
+        telephone_number:
+          type: string
+          example: "1132421452"
+      x-internal: true
+    CardDto:
+      required:
+        - affinity_group_id
+        - card_type
+        - user_id
+      type: object
+      properties:
+        user_id:
+          type: string
+          example: "usr-1625758043579BAR6D4"
+        affinity_group_id:
+          type: string
+          example: "afg-20MpN8vmIPj77ujhb9cS8ctstN2"
+        card_type:
+          type: string
+          example: "PHYSICAL"
+        address:
+          $ref: "#/components/schemas/AddressDto"
+        previous_card_id:
+          type: string
+          description: "{{Si envías este atributo, trataremos la nueva tarjeta como un reemplazo de esta.}}"
+          example: "crd-20gRqyp809SvDzXzhSeG2w6UiO5"
+        pin:
+          type: string
+          description: "{{Sólo aplicable a tarjetas nominadas mexicanas.}}"
+          example: "2023"
+      x-internal: true
+    CardBatchRequestDto:
+      required:
+        - affinity_group_id
+        - quantity
+        - distribution_type
+      type: object
+      properties:
+        affinity_group_id:
+          type: string
+          example: "afg-20MpN8vmIPj77ujhb9cS8ctstN2"
+        quantity:
+          type: number
+          example: 100
+          minimum: 1
+          maximum: 1000
+        distribution_type:
+          type: string
+          enum:
+            - CLIENT
+            - WAREHOUSE
+            - EXTERNAL
+        address:
+          description: "{{Address es obligatorio cuando la distribución es de tipo CLIENT}}"
+          $ref: "#/components/schemas/AddressDto"
+        receiver:
+          description: "{{Receiver es obligatorio cuando la distribución es de tipo CLIENT.}}"
+          $ref: "#/components/schemas/ReceiverDto"
+      x-internal: true
+    CardActivationBasicDto:
+      required:
+        - user_id
+        - pin
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: "{{Id público del tarjetahabiente}}"
+          example: "usr-1625758043579BAR6D4"
+        pin:
+          type: string
+          description: "{{Nuevo PIN de la tarjeta elegido por el usuario}}"
+          example: "1475"
+        previous_card_id:
+          type: string
+          description: "{{Si envías este atributo, trataremos la nueva tarjeta como un reemplazo de esta.}}"
+          example: "crd-20gRqyp809SvDzXzhSeG2w6UiO5"
+      x-internal: true
+    CardActivationByPanDto:
+      title: "{{Con PAN}}"
+      allOf:
+        - $ref: "#/components/schemas/CardActivationBasicDto"
+      required:
+        - pan
+      type: object
+      properties:
+        pan:
+          type: string
+          description: "{{Si envías este atributo se activará la tarjeta usando el PAN de la misma}}"
+          example: "4242424242424242"
+    CardActivationByCodeDto:
+      title: "{{Con código de activación}}"
+      allOf:
+        - $ref: "#/components/schemas/CardActivationBasicDto"
+      required:
+        - activation_code
+      type: object
+      properties:
+        activation_code:
+          type: string
+          minLength: 10
+          maxLength: 10
+          description: "{{Si envías este atributo se activará la tarjeta usando el código de activación de la misma}}"
+          example: "0023456783"
+    CardActivationResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              description: "{{Id público de la tarjeta activada}}"
+              example: crd-16262002575379UCMD2
+      x-internal: true
+    CardShipmentUpdateDto:
+      type: object
+      properties:
+        address:
+          $ref: "#/components/schemas/AddressDto"
+      x-internal: true
+    CardsBatchShipmentUpdateDto:
+      type: object
+      properties:
+        address:
+          $ref: "#/components/schemas/AddressDto"
+        receiver:
+          $ref: "#/components/schemas/ReceiverDto"
+      x-internal: true
+    CardShipmentUpdateResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            address:
+              $ref: "#/components/schemas/AddressDto"
+      x-internal: true
+    CardUpdateDto:
+      type: object
+      properties:
+        affinity_group_id:
+          type: string
+          example: "afg-20MpN8vmIPj77ujhb9cS8ctstN2"
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - BLOCKED
+            - DISABLED
+        status_reason:
+          $ref: "#/components/schemas/StatusDetail"
+        pin:
+          type: string
+          example: "1234"
+      x-internal: true
+    CardUpdateResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/CardUpdateDto"
+            - type: object
+      x-internal: true
+    CardsBulkUpdateDto:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+            example: "crd-20gRqyp809SvDzXzhSeG2w6UiO5"
+        status:
+          type: string
+          enum:
+            - EMBOSSED
+            - EXPIRED
+      x-internal: true
+    CardsBulkUpdateResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/CardsBulkUpdateDto"
+            - type: object
+      x-internal: true
+    StatusDetail:
+      type: string
+      enum:
+        - CLIENT_INTERNAL_REASON
+        - USER_INTERNAL_REASON
+        - POMELO_INTERNAL_REASON
+        - PROVIDER_INTERNAL_REASON
+        - LOST
+        - STOLEN
+        - BROKEN
+        - UPGRADE
+      x-internal: true
+    CardResponseWithActivation:
+      allOf:
+        - $ref: '#/components/schemas/CardResponse'
+        - type: object
+          properties:
+            activated_at:
+              type: string
+              example: "2021-11-18"
+    CardResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "crd-20gRqyp809SvDzXzhSeG2w6UiO5"
+        affinity_group_id:
+          type: string
+          example: "afg-20MpN8vmIPj77ujhb9cS8ctstN2"
+        card_type:
+          type: string
+          example: "VIRTUAL"
+        product_type:
+          type: string
+          example: "PREPAID"
+        status:
+          type: string
+          example: "ACTIVE"
+        shipment_id:
+          type: string
+          example: "shi-16281925351057V5BKK"
+        user_id:
+          type: string
+          example: "usr-1625506260864NAS060"
+        start_date:
+          type: string
+          example: "2021-11-08"
+        last_four:
+          type: string
+          example: "1573"
+        provider:
+          type: string
+          enum:
+            - MASTERCARD
+            - VISA
+        affinity_group_name:
+          type: string
+          example: "VIRTUAL_TEST"
+      x-internal: true
+    CardStandardResponse:
+      title: "{{Sin datos sensibles}}"
+      type: object
+      properties:
+        data:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/CardResponseWithActivation"
+            - type: object
+        meta:
+          type: object
+          properties:
+            extend:
+              type: array
+              items:
+                type: string
+      x-internal: true
+    CardCreationStandardResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/CardResponse"
+            - type: object
+      x-internal: true
+    CardListStandardResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CardResponse"
+      x-internal: true
+    CardBatchResponse:
+      type: object
+      properties:
+        shipment_id:
+          type: number
+        affinity_group_id:
+          type: string
+          example: "afg-20MpN8vmIPj77ujhb9cS8ctstN2"
+        card_type:
+          type: string
+          example: "PHYSICAL"
+        quantity:
+          type: number
+          example: 100
+        distribution_type:
+          type: string
+          example: "CLIENT"
+      x-internal: true
+    CardBatchStandardResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/CardBatchResponse"
+            - type: object
+      x-internal: true
+    SecureCardResponse:
+      allOf:
+        - $ref: "#/components/schemas/CardResponseWithActivation"
+        - type: object
+          properties:
+            pan:
+              type: string
+            cvv:
+              type: string
+            name:
+              type: string
+            expiration:
+              type: string
+              example: 10/12
+            expiration_date:
+              type: string
+              example: "2026-11-08"
+            cvv_expiration_time:
+              type: string
+              example: "2022-11-29T22:55:04.660933Z"
+              format: ISO 8601
+      x-internal: true
+    SecureCardStandardResponse:
+      title: "{{Con datos sensibles}}"
+      type: object
+      properties:
+        data:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/SecureCardResponse"
+            - type: object
+        meta:
+          type: object
+          properties:
+            extend:
+              type: array
+              items:
+                type: string
+      x-internal: true
+    CardResponsePage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CardResponse"
+        meta:
+          type: object
+          properties:
+            pagination:
+              type: object
+              properties:
+                total_pages:
+                  type: number
+                  example: 1
+                current_page:
+                  type: number
+            filter:
+              type: array
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                    example: status
+                  value:
+                    type: array
+                    items:
+                      type: string
+                    example: [ ACTIVE, BLOCKED ]
+    AffinityGroupDto:
+      required:
+        - name
+        - card_type_supported
+        - innominate
+        - months_to_expiration
+        - exchange_rate_type
+        - exchange_rate_amount
+        - local_withdrawal_allowed
+        - international_withdrawal_allowed
+        - local_ecommerce_allowed
+        - international_ecommerce_allowed
+        - local_purchases_allowed
+        - international_purchases_allowed
+        - product_id
+        - local_extracash_allowed
+        - international_extracash_allowed
+        - plastic_model
+        - kit_model
+        - embossing_company
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Pomelo Innominate"
+        card_type_supported:
+          type: array
+          description: Card types supported
+          items:
+            type: string
+            enum:
+              - VIRTUAL
+              - PHYSICAL
+        innominate:
+          type: boolean
+          example: true
+        months_to_expiration:
+          type: number
+          example: 96
+        issued_account:
+          type: number
+          example: 9
+          default: 9
+        fee_account:
+          type: number
+          example: 36
+          default: 36
+        exchange_rate_type:
+          type: string
+          example: "none"
+        exchange_rate_amount:
+          type: number
+          example: 100
+          description: "{{Tasa de recargo por sobre el tipo de cambio oficial expresado como entero con dos decimales movidos hacia la derecha.}}"
+        local_withdrawal_allowed:
+          type: boolean
+          example: true
+        international_withdrawal_allowed:
+          type: boolean
+          example: true
+        local_ecommerce_allowed:
+          type: boolean
+          example: true
+        international_ecommerce_allowed:
+          type: boolean
+          example: true
+        local_purchases_allowed:
+          type: boolean
+          example: true
+        international_purchases_allowed:
+          type: boolean
+          example: true
+        product_id:
+          type: string
+          example: "prd-20MpN8vmIPj77ujhb9cS8ctstN2"
+        local_extracash_allowed:
+          type: boolean
+          example: false
+        international_extracash_allowed:
+          type: boolean
+          example: true
+        plastic_model:
+          type: integer
+          example: 388
+        provider:
+          type: string
+          enum:
+            - MASTERCARD
+            - VISA
+        kit_model:
+          type: integer
+          example: 122323
+        embossing_company:
+          type: enum
+          enum:
+            - THALES
+            - MY_CARD
+            - GPC
+            - IDEMIA
+            - COLORGRAF
+            - GID
+            - JALLCARD
+        courier_company:
+          type: enum
+          enum:
+            - ANDREANI
+            - DOMINA
+            - ESTAFETA
+            - EXTERNAL_COURIER
+            - FLASH
+            - MINUTOS_99
+      x-internal: true
+    AffinityGroupResponseDto:
+      allOf:
+        - $ref: '#/components/schemas/AffinityGroupDto'
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - BLOCKED
+            - DISABLED
+        total_exchange_rate:
+          type: number
+          example: 150.50
+          description: "{{Tipo de cambio con respecto al dólar estadounidense en moneda local considerando la tasa de recargo definida en el grupo de afinidad}}"
+        exchange_currency_name:
+          type: string
+          example: ARS
+          description: "{{Moneda local}}"
+        activation_code_enabled:
+          type: boolean
+          description: "{{Habilitar la activación de tarjeta por código}}"
+          example: true
+          default: false
+        dcvv_enabled:
+          type: boolean
+          description: "{{Configuración de Cvv Dinámico}}"
+          example: true
+          default: false
+    AffinityGroupExtendedStandardResponseDto:
+      type: object
+      properties:
+        data:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/AffinityGroupResponseDto'
+        meta:
+          type: object
+    InvalidRequestErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            error_code:
+              type: string
+              example: INVALID_REQUEST
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/StandardErrorDetails"
+    CardNotFoundErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            error_code:
+              type: string
+              example: CARD_NOT_FOUND
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/StandardErrorDetails"
+    SomeNotFoundErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            error_code:
+              type: string
+              example: "USER_NOT_FOUND|CARD_NOT_FOUND|AFFINITY_GROUP_NOT_FOUND"
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/StandardErrorDetails"
+    UserOrAffinityNotFoundErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            error_code:
+              type: string
+              example: "USER_NOT_FOUND|AFFINITY_GROUP_NOT_FOUND"
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/StandardErrorDetails"
+    AffinityNotFoundErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            error_code:
+              type: string
+              example: AFFINITY_GROUP_NOT_FOUND
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/StandardErrorDetails"
+    StandardErrorDetails:
+      type: object
+      properties:
+        code:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        source:
+          type: string
+      x-internal: true
